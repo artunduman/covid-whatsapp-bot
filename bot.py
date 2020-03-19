@@ -4,61 +4,63 @@ import json
 
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
+from countries import Countries
 
 app = Flask(__name__)
-playlist_id = '0Voksg4xZg5H14j3PVp9F2'
-client_id = 'da437917030c458bb34b1282eaac1725'
-client_secret = '247c471caf964a8e86e24b680e2cd402'
-spotify_code = ''
+base_url = 'https://corona.lmao.ninja'
 
-def get_spotify_token():
-    # url = 'https://accounts.spotify.com/authorize?client_id={}&response_type=code&' \
-    #       'redirect_uri=http%3A%2F%2F51f34525.ngrok.io%2Fspotify'.format(client_id)
-    grant_type = 'client_credential'
 
-    body_params = {'grant_type': grant_type}
+def get_help_string():
+    string = 'Try typing ' \
+          '"Info about Canada and Turkey" ' \
+          'or "World info"\n'
+    return string
 
-    url = 'https://accounts.spotify.com/api/token'
 
-    response = requests.post(url, data=body_params, auth=(client_id, client_secret))
-    content = json.loads(response.content.decode('utf-8'))
-    return content['access_token'], content['expires_in']
+def get_stats(resp):
+    resp_json = json.loads(resp.content)
+    ret = "Cases: {}\nDeaths: {}\nRecovered: {}\n".format(
+        resp_json['cases'],
+        resp_json['deaths'],
+        resp_json['recovered']
+    )
+    return ret
 
-@app.route('/spotify')
-def spotify_callback():
-    code = request.values.get('code', '')
-    if code:
-        spotify_code = code
 
 @app.route('/bot', methods=['POST'])
 def bot():
     incoming_msg = request.values.get('Body', '').lower()
-    resp = MessagingResponse()
-    msg = resp.message()
-    responded = False
-    if "open.spotify.com/track" in incoming_msg:
-        spotify_url = re.search("(?P<url>https?://[^\s]+)", incoming_msg).group("url")
-        track_id = spotify_url.split('/')[-1].split('?')[0]
-        spotify_request_uri = 'https://api.spotify.com/v1/playlists/{}/tracks'.format(playlist_id)
-        body = {
-            "uris": [
-                "spotify:track:{}".format(track_id)
-            ]
-        }
-        token, _ = get_spotify_token()
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(token)
-        }
-        print(body)
-        print(headers)
-        r = requests.post(url=spotify_request_uri, json=body, headers=headers)
-        print(r.content, r.status_code)
-        if r.status_code == 200:
-            msg.body('The song has been added to the playlist')
+    msg_resp = MessagingResponse()
+    msg = msg_resp.message()
+    print(incoming_msg)
+    countries = [c for c in incoming_msg.split(' ') if c in Countries.values()]
+    print('Countries: {}'.format(countries))
+    if 'help' in incoming_msg:
+        msg.body(get_help_string())
+    elif len(countries) == 0:
+        query_url = base_url + '/all'
+        resp = requests.get(query_url)
+        print(resp.content)
+        if resp.status_code == 200:
+            stats = get_stats(resp)
+            print(stats)
+            msg.body(
+                "World stats of Coronavirus as of today:\n" + get_stats(resp)
+            )
         else:
-            msg.body("I see that you are sharing a song, but I couldn't add it to playlist")
-        responded = True
-    if not responded:
-        msg.body("This text doesn't include a song to add")
-    return str(resp)
+            msg.body("No data found for the given input. Might be a server error\n"
+                     + get_help_string())
+    else:
+        ret_string = ''
+        count = 0
+        for country in countries:
+            resp = requests.get(base_url + '/countries/{}'.format(country))
+            if resp.status_code == 200:
+                count += 1
+                ret_string += "{}'s stats of Coronavirus as of today:\n".format(country) + get_stats(resp)
+        if count != 0:
+            msg.body(ret_string)
+        else:
+            msg.body("No data found for the given string. Might be a server error\n"
+                     + get_help_string())
+    return str(msg_resp)
