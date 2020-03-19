@@ -12,7 +12,7 @@ base_url = 'https://corona.lmao.ninja'
 
 def get_help_string():
     string = 'Try typing ' \
-          '"Info about Canada and Turkey" ' \
+          '"Info about Canada and Turkey\n" ' \
           'or "World info"\n'
     return string
 
@@ -33,7 +33,7 @@ def bot():
     msg_resp = MessagingResponse()
     msg = msg_resp.message()
     print(incoming_msg)
-    countries = [c for c in incoming_msg.split(' ') if c in Countries.values()]
+    countries = [c for c in re.split(r'[;,."\'\s]\s*', incoming_msg) if c in Countries.values()]
     print('Countries: {}'.format(countries))
     if 'help' in incoming_msg:
         msg.body(get_help_string())
