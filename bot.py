@@ -12,9 +12,9 @@ base_url = 'https://corona.lmao.ninja'
 
 important_keys = OrderedDict(
     [('cases', 'cases'),
-     ('active', 'active'),
+     ('active', 'active cases'),
      ('deaths', 'deaths'),
-     ('recovered', 'recovered'),
+     ('recovered', 'recovered cases'),
      ('todayDeaths', 'deaths today'),
      ('todayCases', 'new cases today'),
      ('casesPerOneMillion', 'per million cases'),
@@ -51,7 +51,7 @@ def _compare(country1, country2, raw1, raw2):
         elif raw2[key] > raw1[key]:
             ret += template.format(country2.capitalize(), important_keys[key])
         else:
-            ret += 'Countries have same {}'.format(important_keys[key])
+            ret += 'Countries have same {}\n'.format(important_keys[key])
     return ret
 
 

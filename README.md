@@ -10,7 +10,7 @@ create a virtual environment and install requirements
 ```
 python3 -m venv whatsapp-bot-venv
 source whatsapp-bot-venv/bin/activate
-pip3 install -r 
+pip3 install -r requirements.txt
 ```
 You are ready to run the server
 ```
