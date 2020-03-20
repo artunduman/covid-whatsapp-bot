@@ -1,4 +1,4 @@
-#Covid Whatsapp Bot
+# Covid Whatsapp Bot
 
 A Whatsapp chatbot to get the latest COVID-19 information
 
